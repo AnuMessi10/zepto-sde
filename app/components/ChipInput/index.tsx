@@ -19,6 +19,7 @@ const ChipInput: FC<IChipInputProps> = ({ users = [] }) => {
   const [matchingUsers, setMatchingUsers] = useState<IUser[]>(users);
   const [selectedUsers, setSelectedUsers] = useState<IUser[]>([]);
   const [isLastUserSelected, setIsLastUserSelected] = useState<boolean>(false);
+  const [arrowTracker, setArrowTracker] = useState<number>(-1);
 
   // Show the users list on focus
   const handleFocus = () => {
@@ -70,6 +71,9 @@ const ChipInput: FC<IChipInputProps> = ({ users = [] }) => {
     setMatchingUsers((prevMatchingUsers) =>
       prevMatchingUsers.filter((user) => user.id !== id)
     );
+
+    // reset down arrow tracker if present
+    if (arrowTracker !== -1) setArrowTracker(-1);
   };
 
   // On clicking the cross icon from the selected users
@@ -79,25 +83,34 @@ const ChipInput: FC<IChipInputProps> = ({ users = [] }) => {
 
     if (!selectedUser) return;
 
+    // reset down arrow tracker if present
+    if (arrowTracker !== -1) setArrowTracker(-1);
+
     // Remove from the selected users
     setSelectedUsers((prevSelectedUsers) =>
       prevSelectedUsers.filter((user) => user.id !== id)
     );
 
+    if (value) {
+      return;
+    }
+
     setMatchingUsers(_.difference(users, selectedUsers));
 
     // Add to the matching users
-    if (!value)
-      setMatchingUsers((prevMatchingUsers) => [
-        ...prevMatchingUsers,
-        selectedUser,
-      ]);
+    setMatchingUsers((prevMatchingUsers) => [
+      ...prevMatchingUsers,
+      selectedUser,
+    ]);
   };
 
   // Handle keyboard events (enter, backspace etc...)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (matchingUsers.length > 0 && e.key === "Enter") {
-      addClickedUser((matchingUsers.at(0) as IUser).id);
+      const userToBeAdded = matchingUsers.at(
+        arrowTracker === -1 ? 0 : arrowTracker
+      ) as IUser;
+      addClickedUser(userToBeAdded.id);
       setMatchingUsers((prevMatchingUsers) =>
         prevMatchingUsers.filter((user) => user.id !== matchingUsers[0].id)
       );
@@ -109,6 +122,24 @@ const ChipInput: FC<IChipInputProps> = ({ users = [] }) => {
         const userToBeRemoved = selectedUsers.at(-1) as IUser;
         removeClickedUser(userToBeRemoved.id);
         setIsLastUserSelected(false);
+      }
+    }
+
+    // add handling for up arrow key press
+    if (e.key === "ArrowUp") {
+      if (arrowTracker > 0) {
+        setArrowTracker((prev) => prev - 1);
+      } else if (arrowTracker === 0) {
+        setArrowTracker(matchingUsers.length - 1);
+      }
+    }
+
+    // add handling for down arrow key press
+    if (e.key === "ArrowDown") {
+      if (arrowTracker < matchingUsers.length - 1) {
+        setArrowTracker((prev) => prev + 1);
+      } else if (arrowTracker === matchingUsers.length - 1) {
+        setArrowTracker(0);
       }
     }
   };
@@ -137,7 +168,11 @@ const ChipInput: FC<IChipInputProps> = ({ users = [] }) => {
           onKeyDown={handleKeyDown}
         />
         {isFocused && matchingUsers.length ? (
-          <SuggestionBox users={matchingUsers} onChipClick={addClickedUser} />
+          <SuggestionBox
+            users={matchingUsers}
+            onChipClick={addClickedUser}
+            focusedIdx={arrowTracker}
+          />
         ) : (
           <></>
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ChangeEvent, FC, useEffect, useRef, useState } from "react";
+import React, { ChangeEvent, FC, useRef, useState } from "react";
 import { IUser } from "@/app/models/User/@types";
 import SuggestionBox from "../SuggestionBox";
 import Chip from "../Chip";
@@ -27,9 +27,16 @@ const ChipInput: FC<IChipInputProps> = ({ users = [] }) => {
     setIsFocused(true);
   };
 
+  // Logic for autocomplete when text changes
   const handleInputChange = ({ target }: ChangeEvent<HTMLInputElement>) => {
     if (!isFocused) setIsFocused(true);
     const unselectedUsers = _.difference(users, selectedUsers);
+
+    if (!target.value) {
+      setValue("");
+      setMatchingUsers(unselectedUsers);
+      return;
+    }
 
     const filteredUsers: IUser[] = target.value
       ? unselectedUsers.filter(({ name }) =>
@@ -37,10 +44,11 @@ const ChipInput: FC<IChipInputProps> = ({ users = [] }) => {
         )
       : [];
 
-    setMatchingUsers(filteredUsers);
     setValue(target.value);
+    setMatchingUsers(filteredUsers);
   };
 
+  // On clicking a user from the suggestion box
   const addClickedUser = (id: IUser["id"]) => {
     if (isLastUserSelected) setIsLastUserSelected(false);
 
@@ -64,6 +72,7 @@ const ChipInput: FC<IChipInputProps> = ({ users = [] }) => {
     );
   };
 
+  // On clicking the cross icon from the selected users
   const removeClickedUser = (id: IUser["id"]) => {
     // Find the user to remove
     const selectedUser = selectedUsers.find((user) => user.id === id);
@@ -75,6 +84,8 @@ const ChipInput: FC<IChipInputProps> = ({ users = [] }) => {
       prevSelectedUsers.filter((user) => user.id !== id)
     );
 
+    setMatchingUsers(_.difference(users, selectedUsers));
+
     // Add to the matching users
     if (!value)
       setMatchingUsers((prevMatchingUsers) => [
@@ -85,15 +96,19 @@ const ChipInput: FC<IChipInputProps> = ({ users = [] }) => {
 
   // Handle keyboard events (enter, backspace etc...)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (matchingUsers.length > 0 && e.key === "Enter")
+    if (matchingUsers.length > 0 && e.key === "Enter") {
       addClickedUser((matchingUsers.at(0) as IUser).id);
+      setMatchingUsers((prevMatchingUsers) =>
+        prevMatchingUsers.filter((user) => user.id !== matchingUsers[0].id)
+      );
+    }
 
     if (!value && selectedUsers.length > 0 && e.key === "Backspace") {
       if (!isLastUserSelected) setIsLastUserSelected(true);
       else {
-        removeClickedUser((selectedUsers.at(-1) as IUser).id);
+        const userToBeRemoved = selectedUsers.at(-1) as IUser;
+        removeClickedUser(userToBeRemoved.id);
         setIsLastUserSelected(false);
-        setMatchingUsers(_.difference(users, selectedUsers));
       }
     }
   };

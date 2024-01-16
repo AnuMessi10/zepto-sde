@@ -1,0 +1,7 @@
+.suggestionBox {
+    @apply border shadow-xl absolute min-w-[450px] max-h-60 overflow-y-scroll overflow-x-hidden mt-2;
+}
+
+.suggestionBoxUser {
+    @apply flex p-2 gap-4 items-center hover:bg-gray-100 w-full;
+}

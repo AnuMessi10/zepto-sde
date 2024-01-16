@@ -1,36 +1,35 @@
 import { IUser } from "@/app/models/User/@types";
 import Image from "next/image";
 import React, { FC } from "react";
+import styles from "./index.module.scss";
 
 export interface ISuggestionBoxProps {
-  filteredUsers: IUser[];
+  users: IUser[];
   onChipClick: (id: IUser["id"]) => void;
 }
 
 const SuggestionBox: FC<ISuggestionBoxProps> = ({
-  filteredUsers: filteredChips = [],
+  users = [],
   onChipClick,
 }) => {
   return (
-    <div className="border shadow-xl absolute max-h-60 w-fit overflow-y-scroll overflow-x-hidden">
-      {filteredChips.map(({ id, name, avatar, email }) => (
+    <div className={styles.suggestionBox}>
+      {users.map(({ id, name, avatar, email }) => (
         <button
           key={id}
-          className="flex p-2 gap-2 items-center justify-between"
+          className={styles.suggestionBoxUser}
           onClick={() => onChipClick(id)}
         >
           <Image
-            className="h-10 w-10 rounded-full"
+            className="rounded-full"
             src={avatar.src}
             alt={avatar.alt}
             width={40}
             height={40}
           />
-          <div className="text-left min-w-[180px]">
-            <span>{name}</span>
-          </div>
-          <div>
-            <span>{email}</span>
+          <div className="flex items-center justify-between w-full">
+            <span className="text-sm">{name}</span>
+            <span className="text-xs">{email}</span>
           </div>
         </button>
       ))}
